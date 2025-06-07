@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "es6"],
+    "lib": ["dom", "dom.iterable", "es2017"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -17,6 +17,7 @@
         "name": "next"
       }
     ],
+    "target": "es2017",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
