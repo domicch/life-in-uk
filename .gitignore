@@ -5,9 +5,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Generated files
-questions.csv
-answers.csv
-*.csv
 
 # Converted text files
 txt_exams/
