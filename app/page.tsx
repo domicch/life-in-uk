@@ -13,7 +13,7 @@ export default function Home() {
           Test your knowledge of UK history, culture, and government.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
+        <div className="grid md:grid-cols-3 gap-8 mb-12">
           <div className="bg-white p-8 rounded-xl shadow-md">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               📚 Practice Mode
@@ -41,6 +41,21 @@ export default function Home() {
               className="inline-block bg-success-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-success-700 transition-colors"
             >
               Take Test
+            </Link>
+          </div>
+
+          <div className="bg-white p-8 rounded-xl shadow-md">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              📋 Individual Tests
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Practice specific exam sets. Choose from available individual tests.
+            </p>
+            <Link 
+              href="/individual"
+              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Select Exam
             </Link>
           </div>
         </div>

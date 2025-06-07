@@ -38,7 +38,14 @@ export default function ResultsPage() {
     } else if (resultsId) {
       // New method: data in sessionStorage
       try {
-        const storageKey = mode === 'practice' ? `practice-results-${resultsId}` : `test-results-${resultsId}`
+        let storageKey
+        if (mode === 'individual') {
+          storageKey = `individual-results-${resultsId}`
+        } else if (mode === 'practice') {
+          storageKey = `practice-results-${resultsId}`
+        } else {
+          storageKey = `test-results-${resultsId}`
+        }
         const storedData = sessionStorage.getItem(storageKey)
         
         if (storedData) {
@@ -57,6 +64,22 @@ export default function ResultsPage() {
     
     setLoading(false)
   }, [searchParams])
+
+  // Get additional parameters for individual tests
+  const mode = searchParams.get('mode')
+  const examNumber = searchParams.get('examNumber')
+  const originalMode = searchParams.get('originalMode')
+
+  // Determine the test type for display
+  const getTestTitle = () => {
+    if (mode === 'individual') {
+      return `Exam ${examNumber} Results ${originalMode === 'practice' ? '(Practice)' : '(Test)'}`
+    } else if (mode === 'practice') {
+      return 'Practice Results'
+    } else {
+      return 'Test Results'
+    }
+  }
 
   const correctCount = results.filter(r => r.isCorrect).length
   const incorrectCount = results.length - correctCount
@@ -114,7 +137,7 @@ export default function ResultsPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Test Results
+              {getTestTitle()}
             </h1>
             <div className={`text-6xl font-bold mb-4 ${passed ? 'text-success-600' : 'text-danger-600'}`}>
               {percentage}%
@@ -176,10 +199,10 @@ export default function ResultsPage() {
               )}
               
               <Link
-                href="/test"
+                href={mode === 'individual' ? '/individual' : '/test'}
                 className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
               >
-                Take Another Test
+                {mode === 'individual' ? 'Take Another Individual Test' : 'Take Another Test'}
               </Link>
               
               <Link
