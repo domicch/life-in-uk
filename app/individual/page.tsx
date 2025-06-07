@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Papa from 'papaparse'
 import Link from 'next/link'
+import { getAssetUrl } from '../utils/assets'
 
 interface Question {
   examNumber: number
@@ -35,7 +36,7 @@ export default function IndividualTestsPage() {
   useEffect(() => {
     const loadExamList = async () => {
       try {
-        const questionsResponse = await fetch('/questions.csv')
+        const questionsResponse = await fetch(getAssetUrl('questions.csv'))
         
         if (!questionsResponse.ok) {
           throw new Error('Failed to load exam data')

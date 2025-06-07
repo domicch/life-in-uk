@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Papa from 'papaparse'
+import { getAssetUrl } from '../utils/assets'
 
 interface Question {
   examNumber: number
@@ -42,8 +43,8 @@ export default function PracticePage() {
     const loadData = async () => {
       try {
         const [questionsResponse, answersResponse] = await Promise.all([
-          fetch('/questions.csv'),
-          fetch('/answers.csv')
+          fetch(getAssetUrl('questions.csv')),
+          fetch(getAssetUrl('answers.csv'))
         ])
 
         if (!questionsResponse.ok || !answersResponse.ok) {
