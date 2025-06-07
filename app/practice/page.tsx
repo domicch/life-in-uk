@@ -26,7 +26,7 @@ interface QuestionData extends Question {
 
 type QuestionStatus = 'unanswered' | 'correct' | 'incorrect' | 'review' | 'current'
 
-export default function TestPage() {
+export default function PracticePage() {
   const router = useRouter()
   const [questions, setQuestions] = useState<QuestionData[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -34,7 +34,6 @@ export default function TestPage() {
   const [questionStatuses, setQuestionStatuses] = useState<{ [key: number]: QuestionStatus }>({})
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<number>>(new Set())
   const [showResult, setShowResult] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(45 * 60) // 45 minutes in seconds
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -86,12 +85,17 @@ export default function TestPage() {
           question.isMultipleChoice = correctAnswers.length > 1
         })
 
-        // Convert to array and shuffle for random test
+        // Use ALL questions for practice mode (no shuffling, no limit)
         const allQuestions = Array.from(questionMap.values())
-        const shuffled = allQuestions.sort(() => Math.random() - 0.5)
-        const testQuestions = shuffled.slice(0, 24)
+        // Sort by exam number and question number for consistent order
+        allQuestions.sort((a, b) => {
+          if (a.examNumber !== b.examNumber) {
+            return a.examNumber - b.examNumber
+          }
+          return a.questionNumber - b.questionNumber
+        })
 
-        setQuestions(testQuestions)
+        setQuestions(allQuestions)
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load test data')
@@ -101,20 +105,6 @@ export default function TestPage() {
 
     loadData()
   }, [])
-
-  // Timer countdown
-  useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [timeLeft])
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-  }
 
   const handleAnswerSelect = (answerNumber: number) => {
     if (!showResult) {
@@ -241,14 +231,17 @@ export default function TestPage() {
     }
   }
 
-  const finishTest = () => {
-    // Calculate results for all questions
+  const finishPractice = () => {
+    // Calculate results for all answered questions
     const results = questions.map((question, index) => {
       const selectedAnswerNumbers = selectedAnswers[index] || []
       const correctAnswers = question.answers.filter(a => a.isCorrect === 'yes')
       const correctAnswerNumbers = correctAnswers.map(a => a.answerNumber)
       
-      const isCorrect = selectedAnswerNumbers.length === correctAnswerNumbers.length &&
+      // Only calculate result if question was answered
+      const wasAnswered = selectedAnswerNumbers.length > 0 || questionStatuses[index] === 'correct' || questionStatuses[index] === 'incorrect'
+      
+      const isCorrect = wasAnswered && selectedAnswerNumbers.length === correctAnswerNumbers.length &&
         selectedAnswerNumbers.every(num => correctAnswerNumbers.includes(num)) &&
         correctAnswerNumbers.every(num => selectedAnswerNumbers.includes(num))
 
@@ -267,23 +260,23 @@ export default function TestPage() {
         selectedAnswers: selectedAnswerNumbers,
         correctAnswers: correctAnswerNumbers,
         isCorrect,
+        wasAnswered,
         userAnswerTexts,
         correctAnswerTexts
       }
-    })
+    }).filter(result => result.wasAnswered) // Only include answered questions in results
 
     // Navigate to results page with data
     const resultsData = encodeURIComponent(JSON.stringify(results))
     router.push(`/results?data=${resultsData}`)
   }
 
-  const isTestComplete = () => {
-    // Check if all questions have been answered (either correct, incorrect, or have selected answers)
-    return questions.every((_, index) => 
+  const getAnsweredQuestionsCount = () => {
+    return questions.filter((_, index) => 
       questionStatuses[index] === 'correct' || 
       questionStatuses[index] === 'incorrect' || 
       (selectedAnswers[index] && selectedAnswers[index].length > 0)
-    )
+    ).length
   }
 
   if (loading) {
@@ -291,7 +284,7 @@ export default function TestPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">Loading test questions...</p>
+          <p className="text-xl text-gray-600">Loading practice questions...</p>
         </div>
       </div>
     )
@@ -319,7 +312,7 @@ export default function TestPage() {
   const isCurrentQuestionReviewed = reviewedQuestions.has(currentQuestionIndex)
   const canMarkForReview = !showResult && questionStatuses[currentQuestionIndex] !== 'correct' && questionStatuses[currentQuestionIndex] !== 'incorrect'
   const isLastQuestion = currentQuestionIndex === questions.length - 1
-  const testComplete = isTestComplete()
+  const answeredCount = getAnsweredQuestionsCount()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -327,23 +320,52 @@ export default function TestPage() {
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Life in the UK Test</h1>
-            <div className="timer">
-              Time limit: {formatTime(timeLeft)}
+            <h1 className="text-2xl font-bold text-gray-900">Practice Mode</h1>
+            <div className="text-lg font-medium text-gray-600">
+              {answeredCount} of {questions.length} questions answered
             </div>
           </div>
 
-          {/* Question Navigation Grid */}
-          <div className="question-grid mb-4">
-            {questions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToQuestion(index)}
-                className={`question-button ${getQuestionStatus(index)}`}
-              >
-                {index + 1}
-              </button>
-            ))}
+          {/* Question Navigation Grid - Show first 50 questions per row */}
+          <div className="mb-4">
+            <div className="grid grid-cols-10 gap-1 mb-2">
+              {questions.slice(0, Math.min(50, questions.length)).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToQuestion(index)}
+                  className={`question-button text-xs ${getQuestionStatus(index)}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+            
+            {/* Show more rows if there are more than 50 questions */}
+            {questions.length > 50 && (
+              <>
+                <div className="grid grid-cols-10 gap-1 mb-2">
+                  {questions.slice(50, Math.min(100, questions.length)).map((_, index) => {
+                    const actualIndex = index + 50
+                    return (
+                      <button
+                        key={actualIndex}
+                        onClick={() => goToQuestion(actualIndex)}
+                        className={`question-button text-xs ${getQuestionStatus(actualIndex)}`}
+                      >
+                        {actualIndex + 1}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+            
+            {/* Continue for more rows as needed */}
+            {questions.length > 100 && (
+              <div className="text-center text-sm text-gray-500 mt-2">
+                ... and {questions.length - 100} more questions
+              </div>
+            )}
           </div>
 
           {/* Legend */}
@@ -362,17 +384,15 @@ export default function TestPage() {
             </div>
           </div>
 
-          {/* Test Completion Status */}
-          {testComplete && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2 text-blue-800">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span className="font-medium">All questions answered! You can now finish the test.</span>
-              </div>
+          {/* Practice Mode Info */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-800">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">Practice Mode: No time limit • All {questions.length} questions available • Instant feedback</span>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Question */}
@@ -504,51 +524,45 @@ export default function TestPage() {
               Previous
             </button>
 
-            <button 
-              onClick={markForReview}
-              disabled={!canMarkForReview}
-              className={`px-8 py-3 rounded-lg font-medium transition-colors ${
-                canMarkForReview
-                  ? 'bg-warning-500 text-white hover:bg-warning-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              title={!canMarkForReview ? 'Cannot mark reviewed or checked questions' : 'Mark this question for review'}
-            >
-              {isCurrentQuestionReviewed ? 'Reviewed' : 'Review'}
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={markForReview}
+                disabled={!canMarkForReview}
+                className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+                  canMarkForReview
+                    ? 'bg-warning-500 text-white hover:bg-warning-600'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                title={!canMarkForReview ? 'Cannot mark reviewed or checked questions' : 'Mark this question for review'}
+              >
+                {isCurrentQuestionReviewed ? 'Reviewed' : 'Review'}
+              </button>
+
+              {answeredCount > 0 && (
+                <button
+                  onClick={finishPractice}
+                  className="bg-success-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-success-700"
+                >
+                  Finish Practice
+                </button>
+              )}
+            </div>
 
             {showResult ? (
-              isLastQuestion ? (
-                <button
-                  onClick={finishTest}
-                  className="bg-success-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-success-700"
-                >
-                  Finish Test
-                </button>
-              ) : (
-                <button
-                  onClick={nextQuestion}
-                  className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700"
-                >
-                  Next Question
-                </button>
-              )
+              <button
+                onClick={nextQuestion}
+                disabled={isLastQuestion}
+                className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLastQuestion ? 'Last Question' : 'Next Question'}
+              </button>
             ) : (
-              isLastQuestion && testComplete ? (
-                <button
-                  onClick={finishTest}
-                  className="bg-success-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-success-700"
-                >
-                  Finish Test
-                </button>
-              ) : (
-                <button
-                  onClick={checkAnswer}
-                  className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700"
-                >
-                  Check
-                </button>
-              )
+              <button
+                onClick={checkAnswer}
+                className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700"
+              >
+                Check
+              </button>
             )}
           </div>
         </div>
