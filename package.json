@@ -1,0 +1,13 @@
+{
+  "name": "life-in-uk-parser",
+  "version": "1.0.0",
+  "description": "Parser for Life in UK exam files",
+  "main": "parse_exams.js",
+  "scripts": {
+    "convert": "node convert_docx.js",
+    "parse": "node parse_exams.js"
+  },
+  "dependencies": {
+    "mammoth": "^1.6.0"
+  }
+}
