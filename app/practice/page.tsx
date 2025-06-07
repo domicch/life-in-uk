@@ -85,14 +85,14 @@ export default function PracticePage() {
           question.isMultipleChoice = correctAnswers.length > 1
         })
 
-        // Use ALL questions for practice mode (no shuffling, no limit)
+        // Use ALL questions for practice mode with randomization
         const allQuestions = Array.from(questionMap.values())
-        // Sort by exam number and question number for consistent order
-        allQuestions.sort((a, b) => {
-          if (a.examNumber !== b.examNumber) {
-            return a.examNumber - b.examNumber
-          }
-          return a.questionNumber - b.questionNumber
+        // Shuffle questions for better learning experience
+        allQuestions.sort(() => Math.random() - 0.5)
+        
+        // Also shuffle answers within each question for better practice
+        allQuestions.forEach(question => {
+          question.answers.sort(() => Math.random() - 0.5)
         })
 
         setQuestions(allQuestions)
@@ -266,9 +266,12 @@ export default function PracticePage() {
       }
     }).filter(result => result.wasAnswered) // Only include answered questions in results
 
-    // Navigate to results page with data
-    const resultsData = encodeURIComponent(JSON.stringify(results))
-    router.push(`/results?data=${resultsData}`)
+    // Store results in sessionStorage to avoid URL length issues
+    const resultsId = Date.now().toString()
+    sessionStorage.setItem(`practice-results-${resultsId}`, JSON.stringify(results))
+    
+    // Navigate to results page with just the ID
+    router.push(`/results?id=${resultsId}&mode=practice`)
   }
 
   const getAnsweredQuestionsCount = () => {
@@ -326,46 +329,35 @@ export default function PracticePage() {
             </div>
           </div>
 
-          {/* Question Navigation Grid - Show first 50 questions per row */}
+          {/* Question Navigation Grid - Show all questions with pagination */}
           <div className="mb-4">
-            <div className="grid grid-cols-10 gap-1 mb-2">
-              {questions.slice(0, Math.min(50, questions.length)).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToQuestion(index)}
-                  className={`question-button text-xs ${getQuestionStatus(index)}`}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-            
-            {/* Show more rows if there are more than 50 questions */}
-            {questions.length > 50 && (
-              <>
-                <div className="grid grid-cols-10 gap-1 mb-2">
-                  {questions.slice(50, Math.min(100, questions.length)).map((_, index) => {
-                    const actualIndex = index + 50
-                    return (
-                      <button
-                        key={actualIndex}
-                        onClick={() => goToQuestion(actualIndex)}
-                        className={`question-button text-xs ${getQuestionStatus(actualIndex)}`}
-                      >
-                        {actualIndex + 1}
-                      </button>
-                    )
-                  })}
-                </div>
-              </>
-            )}
-            
-            {/* Continue for more rows as needed */}
-            {questions.length > 100 && (
-              <div className="text-center text-sm text-gray-500 mt-2">
-                ... and {questions.length - 100} more questions
+            {/* Show questions in rows of 20 */}
+            {Array.from({ length: Math.ceil(questions.length / 20) }, (_, rowIndex) => (
+              <div key={rowIndex} className="grid grid-cols-20 gap-1 mb-2">
+                {questions.slice(rowIndex * 20, (rowIndex + 1) * 20).map((_, index) => {
+                  const actualIndex = rowIndex * 20 + index
+                  return (
+                    <button
+                      key={actualIndex}
+                      onClick={() => goToQuestion(actualIndex)}
+                      className={`w-8 h-8 text-xs rounded border-2 font-medium transition-all duration-200 ${
+                        getQuestionStatus(actualIndex) === 'current'
+                          ? 'border-primary-600 bg-primary-600 text-white'
+                          : getQuestionStatus(actualIndex) === 'correct'
+                          ? 'border-success-500 bg-success-500 text-white'
+                          : getQuestionStatus(actualIndex) === 'incorrect'
+                          ? 'border-danger-500 bg-danger-500 text-white'
+                          : getQuestionStatus(actualIndex) === 'review'
+                          ? 'border-warning-500 bg-warning-500 text-white'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-primary-500 hover:text-primary-600'
+                      }`}
+                    >
+                      {actualIndex + 1}
+                    </button>
+                  )
+                })}
               </div>
-            )}
+            ))}
           </div>
 
           {/* Legend */}

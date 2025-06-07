@@ -24,14 +24,37 @@ export default function ResultsPage() {
 
   useEffect(() => {
     const resultsData = searchParams.get('data')
+    const resultsId = searchParams.get('id')
+    const mode = searchParams.get('mode')
+    
     if (resultsData) {
+      // Legacy method: data in URL (for backward compatibility)
       try {
         const parsedResults = JSON.parse(decodeURIComponent(resultsData))
         setResults(parsedResults)
       } catch (error) {
-        console.error('Error parsing results data:', error)
+        console.error('Error parsing results data from URL:', error)
+      }
+    } else if (resultsId) {
+      // New method: data in sessionStorage
+      try {
+        const storageKey = mode === 'practice' ? `practice-results-${resultsId}` : `test-results-${resultsId}`
+        const storedData = sessionStorage.getItem(storageKey)
+        
+        if (storedData) {
+          const parsedResults = JSON.parse(storedData)
+          setResults(parsedResults)
+          
+          // Clean up the stored data after loading
+          sessionStorage.removeItem(storageKey)
+        } else {
+          console.error('No results data found in sessionStorage')
+        }
+      } catch (error) {
+        console.error('Error parsing results data from sessionStorage:', error)
       }
     }
+    
     setLoading(false)
   }, [searchParams])
 

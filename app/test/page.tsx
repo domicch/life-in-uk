@@ -90,6 +90,11 @@ export default function TestPage() {
         const allQuestions = Array.from(questionMap.values())
         const shuffled = allQuestions.sort(() => Math.random() - 0.5)
         const testQuestions = shuffled.slice(0, 24)
+        
+        // Also shuffle answers within each question for better test experience
+        testQuestions.forEach(question => {
+          question.answers.sort(() => Math.random() - 0.5)
+        })
 
         setQuestions(testQuestions)
         setLoading(false)
@@ -272,9 +277,12 @@ export default function TestPage() {
       }
     })
 
-    // Navigate to results page with data
-    const resultsData = encodeURIComponent(JSON.stringify(results))
-    router.push(`/results?data=${resultsData}`)
+    // Store results in sessionStorage to avoid URL length issues
+    const resultsId = Date.now().toString()
+    sessionStorage.setItem(`test-results-${resultsId}`, JSON.stringify(results))
+    
+    // Navigate to results page with just the ID
+    router.push(`/results?id=${resultsId}&mode=test`)
   }
 
   const isTestComplete = () => {
