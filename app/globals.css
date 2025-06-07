@@ -10,13 +10,14 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
+/* Disable automatic dark mode to prevent text color issues */
+/* @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
   }
-}
+} */
 
 body {
   color: rgb(var(--foreground-rgb));
@@ -92,11 +93,11 @@ body {
 }
 
 .answer-option {
-  @apply w-full p-4 border-2 border-gray-200 rounded-lg text-left transition-all duration-200 hover:border-primary-300 hover:bg-primary-50;
+  @apply w-full p-4 border-2 border-gray-200 rounded-lg text-left transition-all duration-200 hover:border-primary-300 hover:bg-primary-50 text-gray-900;
 }
 
 .answer-option.selected {
-  @apply border-primary-500 bg-primary-50;
+  @apply border-primary-500 bg-primary-50 text-gray-900;
 }
 
 .timer {
@@ -105,4 +106,57 @@ body {
 
 .progress-indicator {
   @apply text-lg font-medium text-gray-600;
+}
+
+/* Force visible text utility class */
+.force-dark-text {
+  color: #111827 !important; /* gray-900 */
+}
+
+.force-dark-text * {
+  color: #111827 !important; /* gray-900 */
+}
+
+/* Mobile-specific fixes for text colors */
+@media (max-width: 768px) {
+  .answer-option {
+    @apply text-gray-900;
+  }
+  
+  .answer-option span {
+    @apply text-gray-900 !important;
+  }
+  
+  .answer-option.selected {
+    @apply text-gray-900;
+  }
+  
+  .answer-option.selected span {
+    @apply text-gray-900 !important;
+  }
+  
+  /* Force text color for all interactive elements */
+  button {
+    color: inherit;
+  }
+  
+  /* Ensure proper contrast on mobile */
+  .bg-white {
+    @apply text-gray-900;
+  }
+  
+  /* Force dark text on all answer buttons */
+  button.answer-option span {
+    color: #111827 !important; /* gray-900 */
+  }
+  
+  /* Override any inherited text colors on mobile */
+  .bg-white * {
+    color: inherit;
+  }
+  
+  /* Specific fix for answer text */
+  div.space-y-3 button span {
+    color: #111827 !important; /* gray-900 */
+  }
 }

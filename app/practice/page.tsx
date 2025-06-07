@@ -424,7 +424,7 @@ export default function PracticePage() {
               const isSelected = selectedAnswerNumbers.includes(answer.answerNumber)
               const isCorrect = answer.isCorrect === 'yes'
               
-              let optionClass = 'answer-option'
+              let optionClass = 'answer-option force-dark-text'
               
               if (showResult) {
                 if (isCorrect) {
@@ -461,7 +461,7 @@ export default function PracticePage() {
                         </svg>
                       )}
                     </div>
-                    <span className={showResult && isCorrect ? 'font-semibold' : ''}>{answer.answer}</span>
+                    <span className={`${showResult && isCorrect ? 'font-semibold text-gray-900' : 'text-gray-900'}`}>{answer.answer}</span>
                   </div>
                 </button>
               )
