@@ -59,7 +59,8 @@ export default function IndividualTestsPage() {
         
         questionsData.forEach(q => {
           const examNum = parseInt(q.examNumber?.toString() || '0')
-          if (examNum > 0) {
+          // Only include questions with valid content
+          if (examNum > 0 && q.question && q.question.trim().length > 0) {
             if (!examMap.has(examNum)) {
               examMap.set(examNum, [])
             }

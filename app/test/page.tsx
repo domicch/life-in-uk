@@ -65,18 +65,22 @@ export default function TestPage() {
           skipEmptyLines: true
         }).data
 
-        // Group answers by question
+        // Group answers by question and filter out incomplete entries
         const questionMap = new Map<string, QuestionData>()
         
+        // Only include questions that have valid content
         questionsData.forEach(q => {
-          const key = `${q.examNumber}-${q.questionNumber}`
-          questionMap.set(key, { ...q, answers: [], isMultipleChoice: false })
+          if (q.question && q.question.trim().length > 0) {
+            const key = `${q.examNumber}-${q.questionNumber}`
+            questionMap.set(key, { ...q, answers: [], isMultipleChoice: false })
+          }
         })
 
         answersData.forEach(a => {
           const key = `${a.examNumber}-${a.questionNumber}`
           const question = questionMap.get(key)
-          if (question) {
+          // Only add answers that have actual text content
+          if (question && a.answer && a.answer.trim().length > 0) {
             question.answers.push(a)
           }
         })
@@ -87,8 +91,9 @@ export default function TestPage() {
           question.isMultipleChoice = correctAnswers.length > 1
         })
 
-        // Convert to array and shuffle for random test
+        // Convert to array and shuffle for random test, filtering out incomplete questions
         const allQuestions = Array.from(questionMap.values())
+          .filter(question => question.answers.length > 0) // Only include questions that have answers
         const shuffled = allQuestions.sort(() => Math.random() - 0.5)
         const testQuestions = shuffled.slice(0, 24)
         

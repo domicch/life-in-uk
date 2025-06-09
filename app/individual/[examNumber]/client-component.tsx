@@ -70,10 +70,11 @@ export default function IndividualTestClient({ params }: { params: { examNumber:
           skipEmptyLines: true
         }).data
 
-        // Filter questions for this specific exam
+        // Filter questions for this specific exam and remove incomplete entries
         const examQuestions = questionsData.filter(q => {
           const qExamNumber = parseInt(q.examNumber?.toString() || '0')
-          return qExamNumber === examNumber
+          const hasValidQuestion = q.question && q.question.trim().length > 0
+          return qExamNumber === examNumber && hasValidQuestion
         })
         
         console.log(`Looking for exam ${examNumber}`);
@@ -98,7 +99,8 @@ export default function IndividualTestClient({ params }: { params: { examNumber:
         answersData.forEach(a => {
           const key = `${a.examNumber}-${a.questionNumber}`
           const question = questionMap.get(key)
-          if (question) {
+          // Only add answers that have actual text content
+          if (question && a.answer && a.answer.trim().length > 0) {
             question.answers.push(a)
           }
         })
@@ -109,8 +111,9 @@ export default function IndividualTestClient({ params }: { params: { examNumber:
           question.isMultipleChoice = correctAnswers.length > 1
         })
 
-        // Convert to array and sort by question number
+        // Convert to array and sort by question number, filtering out questions without answers
         const sortedQuestions = Array.from(questionMap.values())
+          .filter(question => question.answers.length > 0) // Only include questions that have answers
           .sort((a, b) => a.questionNumber - b.questionNumber)
 
         // Shuffle answers within each question
