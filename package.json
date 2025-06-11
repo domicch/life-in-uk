@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:github": "NODE_ENV=production next build",
+    "build:github": "NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%S) NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "predeploy": "npm run build:github",
