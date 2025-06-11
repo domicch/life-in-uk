@@ -38,6 +38,13 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Auto-correct currentQuestionIndex if it's out of bounds
+  useEffect(() => {
+    if (questions.length > 0 && currentQuestionIndex >= questions.length) {
+      setCurrentQuestionIndex(Math.max(0, questions.length - 1))
+    }
+  }, [questions.length, currentQuestionIndex])
+
   // Load questions and answers from CSV files
   useEffect(() => {
     const loadData = async () => {
@@ -90,18 +97,36 @@ export default function PracticePage() {
           question.isMultipleChoice = correctAnswers.length > 1
         })
 
-        // Use ALL questions for practice mode with randomization, but filter out incomplete ones
-        const allQuestions = Array.from(questionMap.values())
-          .filter(question => question.answers.length > 0) // Only include questions that have answers
+        // Convert to array and sort by question number, filtering out questions without valid answers
+        const sortedQuestions = Array.from(questionMap.values())
+          .filter(question => {
+            // Ensure question has valid text and at least one valid answer with correct answer marked
+            const hasValidAnswers = question.answers.length > 0
+            const hasCorrectAnswer = question.answers.some(a => a.isCorrect === 'yes')
+            return hasValidAnswers && hasCorrectAnswer
+          })
+        
+        console.log(`Total questions after filtering: ${sortedQuestions.length}`)
+        
+        if (sortedQuestions.length === 0) {
+          throw new Error('No valid questions found after filtering. Please check the CSV data.')
+        }
         // Shuffle questions for better learning experience
-        allQuestions.sort(() => Math.random() - 0.5)
+        sortedQuestions.sort(() => Math.random() - 0.5)
         
         // Also shuffle answers within each question for better practice
-        allQuestions.forEach(question => {
+        sortedQuestions.forEach(question => {
           question.answers.sort(() => Math.random() - 0.5)
         })
 
-        setQuestions(allQuestions)
+        setQuestions(sortedQuestions)
+        
+        // Reset to first question if current index is out of bounds
+        if (currentQuestionIndex >= sortedQuestions.length) {
+          setCurrentQuestionIndex(0)
+          setShowResult(false)
+        }
+        
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load test data')
@@ -113,8 +138,14 @@ export default function PracticePage() {
   }, [])
 
   const handleAnswerSelect = (answerNumber: number) => {
-    if (!showResult) {
+    if (!showResult && currentQuestionIndex < questions.length) {
       const currentQuestion = questions[currentQuestionIndex]
+      
+      // Safety check: ensure current question exists and has answers
+      if (!currentQuestion || !currentQuestion.answers || currentQuestion.answers.length === 0) {
+        console.error('Invalid question at index:', currentQuestionIndex)
+        return
+      }
       
       if (currentQuestion.isMultipleChoice) {
         // Multiple choice: toggle selection
@@ -154,6 +185,12 @@ export default function PracticePage() {
     }
 
     const currentQuestion = questions[currentQuestionIndex]
+    
+    // Safety check: ensure current question exists
+    if (!currentQuestion || !currentQuestion.answers) {
+      console.error('Invalid question when checking answer at index:', currentQuestionIndex)
+      return
+    }
     const correctAnswerNumbers = currentQuestion.answers
       .filter(a => a.isCorrect === 'yes')
       .map(a => a.answerNumber)
@@ -199,8 +236,11 @@ export default function PracticePage() {
   }
 
   const goToQuestion = (index: number) => {
-    setCurrentQuestionIndex(index)
-    setShowResult(false)
+    // Ensure the index is valid
+    if (index >= 0 && index < questions.length) {
+      setCurrentQuestionIndex(index)
+      setShowResult(false)
+    }
   }
 
   const previousQuestion = () => {
@@ -222,6 +262,17 @@ export default function PracticePage() {
 
   const getCurrentQuestionResult = () => {
     const currentQuestion = questions[currentQuestionIndex]
+    
+    // Safety check: ensure current question exists
+    if (!currentQuestion || !currentQuestion.answers) {
+      console.error('Invalid question when getting result at index:', currentQuestionIndex)
+      return {
+        isCorrect: false,
+        correctAnswers: [],
+        selectedAnswerNumbers: []
+      }
+    }
+    
     const selectedAnswerNumbers = selectedAnswers[currentQuestionIndex] || []
     const correctAnswers = currentQuestion.answers.filter(a => a.isCorrect === 'yes')
     const correctAnswerNumbers = correctAnswers.map(a => a.answerNumber)
@@ -322,6 +373,33 @@ export default function PracticePage() {
   const canMarkForReview = !showResult && questionStatuses[currentQuestionIndex] !== 'correct' && questionStatuses[currentQuestionIndex] !== 'incorrect'
   const isLastQuestion = currentQuestionIndex === questions.length - 1
   const answeredCount = getAnsweredQuestionsCount()
+
+  // Safety check: if no current question available, show error
+  if (!loading && (!currentQuestion || questions.length === 0)) {
+    console.error('Practice mode error:', {
+      questionsLength: questions.length,
+      currentQuestionIndex,
+      currentQuestion: !!currentQuestion,
+      loading
+    })
+    
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-red-600 mb-4">No questions available for practice.</p>
+          <p className="text-sm text-gray-600 mb-4">
+            Questions loaded: {questions.length}, Current index: {currentQuestionIndex}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700"
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
