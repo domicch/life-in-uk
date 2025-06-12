@@ -4,11 +4,14 @@ export function getAssetUrl(path: string): string {
   // Remove leading slash if present
   const cleanPath = path.startsWith('/') ? path.slice(1) : path
   
-  // In production with GitHub Pages, we need to add the base path
-  if (process.env.NODE_ENV === 'production') {
+  // Check if we're in GitHub Pages mode (either production with GITHUB_PAGES env var)
+  const isGitHubPages = process.env.GITHUB_PAGES === 'true' || 
+    (typeof window !== 'undefined' && window.location.hostname === 'domicch.github.io')
+  
+  if (isGitHubPages) {
     return `/life-in-uk/${cleanPath}`
   }
   
-  // In development, use relative path from root
+  // For local development and local production testing
   return `/${cleanPath}`
 }

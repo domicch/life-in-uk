@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:github": "NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%S) NODE_ENV=production next build",
-    "start": "next start",
+    "build:github": "NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%S) GITHUB_PAGES=true NODE_ENV=production next build",
+    "build:local": "NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%S) NODE_ENV=production next build",
+    "start": "npx serve@latest out -p 3000",
+    "start:prod": "npm run build:local && npx serve@latest out -p 3000",
+    "start:github": "npm run build:github && npx serve@latest out -p 3000",
     "lint": "next lint",
     "predeploy": "npm run build:github",
     "deploy": "gh-pages -d out"
