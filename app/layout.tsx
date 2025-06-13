@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import VersionInfo from './components/VersionInfo'
+import GoogleAnalytics from './components/GoogleAnalytics'
 import './utils/errorSuppression'
 
 export const metadata: Metadata = {
@@ -28,9 +29,12 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || ''
+  
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-50">
+        {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
         {children}
         <VersionInfo />
       </body>
