@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Papa from 'papaparse'
 import { getAssetUrl } from '../utils/assets'
+import { QuizAnalytics, useQuestionTimer } from '../utils/analytics'
 
 interface Question {
   examNumber: number
@@ -37,6 +38,16 @@ export default function PracticePage() {
   const [showResult, setShowResult] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Analytics tracking
+  const sessionStartTime = useRef<number>(Date.now())
+  const questionStartTime = useRef<number>(Date.now())
+  const hasTrackedStart = useRef<boolean>(false)
+
+  // Track question timing when question changes
+  useEffect(() => {
+    questionStartTime.current = Date.now()
+  }, [currentQuestionIndex])
 
   // Auto-correct currentQuestionIndex if it's out of bounds
   useEffect(() => {
@@ -127,6 +138,12 @@ export default function PracticePage() {
           setShowResult(false)
         }
         
+        // Track quiz start (only once)
+        if (!hasTrackedStart.current && sortedQuestions.length > 0) {
+          QuizAnalytics.trackQuizStart('practice', sortedQuestions.length)
+          hasTrackedStart.current = true
+        }
+        
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load test data')
@@ -191,6 +208,7 @@ export default function PracticePage() {
       console.error('Invalid question when checking answer at index:', currentQuestionIndex)
       return
     }
+    
     const correctAnswerNumbers = currentQuestion.answers
       .filter(a => a.isCorrect === 'yes')
       .map(a => a.answerNumber)
@@ -199,6 +217,22 @@ export default function PracticePage() {
     const isCorrect = selectedAnswerNumbers.length === correctAnswerNumbers.length &&
       selectedAnswerNumbers.every(num => correctAnswerNumbers.includes(num)) &&
       correctAnswerNumbers.every(num => selectedAnswerNumbers.includes(num))
+
+    // Calculate time spent on this question
+    const timeSpent = Math.round((Date.now() - questionStartTime.current) / 1000)
+
+    // Track the question answer in Google Analytics
+    QuizAnalytics.trackQuestionAnswer({
+      examNumber: currentQuestion.examNumber,
+      questionNumber: currentQuestion.questionNumber,
+      question: currentQuestion.question,
+      selectedAnswers: selectedAnswerNumbers,
+      correctAnswers: correctAnswerNumbers,
+      isCorrect,
+      isMultipleChoice: currentQuestion.isMultipleChoice,
+      timeSpent,
+      mode: 'practice'
+    })
 
     setQuestionStatuses(prev => ({
       ...prev,
@@ -218,6 +252,17 @@ export default function PracticePage() {
   const markForReview = () => {
     // Only allow marking for review if the question hasn't been checked yet
     if (!showResult && questionStatuses[currentQuestionIndex] !== 'correct' && questionStatuses[currentQuestionIndex] !== 'incorrect') {
+      const currentQuestion = questions[currentQuestionIndex]
+      
+      // Track review marking in analytics
+      if (currentQuestion) {
+        QuizAnalytics.trackQuestionReview(
+          currentQuestion.examNumber, 
+          currentQuestion.questionNumber, 
+          'practice'
+        )
+      }
+      
       setReviewedQuestions(prev => new Set(prev).add(currentQuestionIndex))
       
       // Move to next question automatically after marking for review
@@ -322,6 +367,20 @@ export default function PracticePage() {
         correctAnswerTexts
       }
     }).filter(result => result.wasAnswered) // Only include answered questions in results
+
+    // Track session completion in analytics
+    const answeredCount = results.length
+    const correctCount = results.filter(r => r.isCorrect).length
+    const sessionDuration = Math.round((Date.now() - sessionStartTime.current) / 1000)
+    
+    QuizAnalytics.trackSessionComplete({
+      mode: 'practice',
+      totalQuestions: questions.length,
+      questionsAnswered: answeredCount,
+      correctAnswers: correctCount,
+      sessionDuration,
+      completionRate: (answeredCount / questions.length) * 100
+    })
 
     // Store results in sessionStorage to avoid URL length issues
     const resultsId = Date.now().toString()

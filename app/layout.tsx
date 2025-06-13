@@ -1,7 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import VersionInfo from './components/VersionInfo'
-import GoogleAnalytics from './components/GoogleAnalytics'
+import AnalyticsWrapper from './components/AnalyticsWrapper'
 import './utils/errorSuppression'
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-50">
-        {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
+        <AnalyticsWrapper gaId={GA_MEASUREMENT_ID} />
         {children}
         <VersionInfo />
       </body>

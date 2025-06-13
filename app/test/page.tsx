@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Papa from 'papaparse'
 import { getAssetUrl } from '../utils/assets'
+import { QuizAnalytics } from '../utils/analytics'
 
 interface Question {
   examNumber: number
@@ -38,6 +39,11 @@ export default function TestPage() {
   const [timeLeft, setTimeLeft] = useState(45 * 60) // 45 minutes in seconds
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Analytics tracking
+  const sessionStartTime = useRef<number>(Date.now())
+  const questionStartTime = useRef<number>(Date.now())
+  const hasTrackedStart = useRef<boolean>(false)
 
   // Load questions and answers from CSV files
   useEffect(() => {
@@ -103,6 +109,13 @@ export default function TestPage() {
         })
 
         setQuestions(testQuestions)
+        
+        // Track test start (only once)
+        if (!hasTrackedStart.current && testQuestions.length > 0) {
+          QuizAnalytics.trackQuizStart('test', testQuestions.length)
+          hasTrackedStart.current = true
+        }
+        
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load test data')
@@ -112,6 +125,11 @@ export default function TestPage() {
 
     loadData()
   }, [])
+
+  // Track question timing when question changes
+  useEffect(() => {
+    questionStartTime.current = Date.now()
+  }, [currentQuestionIndex])
 
   // Timer countdown
   useEffect(() => {
@@ -178,6 +196,22 @@ export default function TestPage() {
       selectedAnswerNumbers.every(num => correctAnswerNumbers.includes(num)) &&
       correctAnswerNumbers.every(num => selectedAnswerNumbers.includes(num))
 
+    // Calculate time spent on this question
+    const timeSpent = Math.round((Date.now() - questionStartTime.current) / 1000)
+
+    // Track the question answer in Google Analytics
+    QuizAnalytics.trackQuestionAnswer({
+      examNumber: currentQuestion.examNumber,
+      questionNumber: currentQuestion.questionNumber,
+      question: currentQuestion.question,
+      selectedAnswers: selectedAnswerNumbers,
+      correctAnswers: correctAnswerNumbers,
+      isCorrect,
+      isMultipleChoice: currentQuestion.isMultipleChoice,
+      timeSpent,
+      mode: 'test'
+    })
+
     setQuestionStatuses(prev => ({
       ...prev,
       [currentQuestionIndex]: isCorrect ? 'correct' : 'incorrect'
@@ -196,6 +230,17 @@ export default function TestPage() {
   const markForReview = () => {
     // Only allow marking for review if the question hasn't been checked yet
     if (!showResult && questionStatuses[currentQuestionIndex] !== 'correct' && questionStatuses[currentQuestionIndex] !== 'incorrect') {
+      const currentQuestion = questions[currentQuestionIndex]
+      
+      // Track review marking in analytics
+      if (currentQuestion) {
+        QuizAnalytics.trackQuestionReview(
+          currentQuestion.examNumber, 
+          currentQuestion.questionNumber, 
+          'test'
+        )
+      }
+      
       setReviewedQuestions(prev => new Set(prev).add(currentQuestionIndex))
       
       // Move to next question automatically after marking for review
@@ -281,6 +326,20 @@ export default function TestPage() {
         userAnswerTexts,
         correctAnswerTexts
       }
+    })
+
+    // Track test completion in analytics
+    const answeredCount = results.filter(r => r.selectedAnswers.length > 0).length
+    const correctCount = results.filter(r => r.isCorrect).length
+    const sessionDuration = Math.round((Date.now() - sessionStartTime.current) / 1000)
+    
+    QuizAnalytics.trackSessionComplete({
+      mode: 'test',
+      totalQuestions: questions.length,
+      questionsAnswered: answeredCount,
+      correctAnswers: correctCount,
+      sessionDuration,
+      completionRate: (answeredCount / questions.length) * 100
     })
 
     // Store results in sessionStorage to avoid URL length issues
