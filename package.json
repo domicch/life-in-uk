@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:github": "NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%S) GITHUB_PAGES=true NODE_ENV=production next build",
+    "build": "node build-check.js",
+    "build:github": "chmod +x ./build-github.sh && ./build-github.sh",
     "build:local": "NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%S) NODE_ENV=production next build",
     "start": "npx serve@latest out -p 3000",
     "start:prod": "npm run build:local && npx serve@latest out -p 3000",
