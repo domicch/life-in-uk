@@ -556,20 +556,20 @@ export default function IndividualTestClient({ params }: { params: { examNumber:
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={previousQuestion}
               disabled={currentQuestionIndex === 0}
-              className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-medium hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gray-300 text-gray-700 px-4 sm:px-8 py-3 rounded-lg font-medium hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed order-1"
             >
               Previous
             </button>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 order-2 sm:order-2">
               <button 
                 onClick={markForReview}
                 disabled={!canMarkForReview}
-                className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+                className={`px-4 sm:px-8 py-3 rounded-lg font-medium transition-colors ${
                   canMarkForReview
                     ? 'bg-warning-500 text-white hover:bg-warning-600'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -582,9 +582,9 @@ export default function IndividualTestClient({ params }: { params: { examNumber:
               {testComplete && (
                 <button
                   onClick={finishExam}
-                  className="bg-success-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-success-700"
+                  className="bg-success-600 text-white px-4 sm:px-8 py-3 rounded-lg font-medium hover:bg-success-700"
                 >
-                  Finish Exam
+                  Finish
                 </button>
               )}
             </div>
@@ -593,22 +593,22 @@ export default function IndividualTestClient({ params }: { params: { examNumber:
               isLastQuestion ? (
                 <button
                   onClick={finishExam}
-                  className="bg-success-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-success-700"
+                  className="bg-success-600 text-white px-4 sm:px-8 py-3 rounded-lg font-medium hover:bg-success-700 order-3"
                 >
-                  Finish Exam
+                  Finish
                 </button>
               ) : (
                 <button
                   onClick={nextQuestion}
-                  className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700"
+                  className="bg-primary-600 text-white px-4 sm:px-8 py-3 rounded-lg font-medium hover:bg-primary-700 order-3"
                 >
-                  Next Question
+                  Next
                 </button>
               )
             ) : (
               <button
                 onClick={checkAnswer}
-                className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700"
+                className="bg-primary-600 text-white px-4 sm:px-8 py-3 rounded-lg font-medium hover:bg-primary-700 order-3"
               >
                 Check
               </button>

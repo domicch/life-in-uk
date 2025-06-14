@@ -159,4 +159,35 @@ body {
   div.space-y-3 button span {
     color: #111827 !important; /* gray-900 */
   }
+  
+  /* Mobile navigation button fixes */
+  .flex.flex-col.gap-3 {
+    width: 100%;
+  }
+  
+  /* Ensure buttons don't overflow on small screens */
+  @media (max-width: 480px) {
+    .px-4.sm\:px-8 {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+    
+    /* Make sure buttons fit on very narrow screens */
+    button {
+      min-width: 0;
+      font-size: 0.875rem;
+    }
+    
+    /* Reduce padding on very small screens */
+    .container {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    /* Stack navigation buttons vertically on very small screens */
+    .flex.gap-3.order-2 {
+      flex-direction: column;
+      width: 100%;
+    }
+  }
 }
