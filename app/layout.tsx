@@ -1,5 +1,5 @@
 import './globals.css'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import VersionInfo from './components/VersionInfo'
 import AnalyticsWrapper from './components/AnalyticsWrapper'
 import './utils/errorSuppression'
@@ -7,7 +7,6 @@ import './utils/errorSuppression'
 export const metadata: Metadata = {
   title: 'Life in the UK Test',
   description: 'Practice Life in the UK citizenship test questions',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   icons: {
     icon: [
       {
@@ -22,6 +21,13 @@ export const metadata: Metadata = {
     'pragma': 'no-cache',
     'expires': '0',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
