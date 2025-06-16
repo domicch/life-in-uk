@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { QuizAnalytics } from '../utils/analytics'
 
 interface CookieConsentProps {
   onConsentChange: (hasConsent: boolean) => void
@@ -20,7 +19,7 @@ export default function CookieConsent({ onConsentChange }: CookieConsentProps) {
     } else {
       onConsentChange(consent === 'accepted')
     }
-  }, [])
+  }, [onConsentChange])
 
   const handleAccept = () => {
     localStorage.setItem('cookie-consent', 'accepted')
@@ -40,7 +39,9 @@ export default function CookieConsent({ onConsentChange }: CookieConsentProps) {
     onConsentChange(false)
   }
 
-  if (!showBanner) return null
+  if (!showBanner) {
+    return null
+  }
 
   return (
     <>

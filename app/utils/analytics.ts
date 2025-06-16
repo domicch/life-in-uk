@@ -16,11 +16,11 @@ interface QuestionAnalytics {
   isCorrect: boolean
   isMultipleChoice: boolean
   timeSpent?: number
-  mode: 'practice' | 'test'
+  mode: 'practice' | 'test' | 'individual'
 }
 
 interface SessionAnalytics {
-  mode: 'practice' | 'test'
+  mode: 'practice' | 'test' | 'individual'
   totalQuestions: number
   questionsAnswered: number
   correctAnswers: number
@@ -84,7 +84,7 @@ export class QuizAnalytics {
   }
 
   // Track when a question is marked for review
-  static trackQuestionReview(examNumber: number, questionNumber: number, mode: 'practice' | 'test') {
+  static trackQuestionReview(examNumber: number, questionNumber: number, mode: 'practice' | 'test' | 'individual') {
     if (!this.isGAReady() || !this.hasConsent()) return
 
     window.gtag('event', 'question_review', {
@@ -127,7 +127,7 @@ export class QuizAnalytics {
   }
 
   // Track quiz mode start
-  static trackQuizStart(mode: 'practice' | 'test', totalQuestions: number) {
+  static trackQuizStart(mode: 'practice' | 'test' | 'individual', totalQuestions: number) {
     if (!this.isGAReady() || !this.hasConsent()) return
 
     window.gtag('event', 'quiz_start', {
@@ -139,7 +139,7 @@ export class QuizAnalytics {
   }
 
   // Track when users abandon quiz
-  static trackQuizAbandon(mode: 'practice' | 'test', questionsAnswered: number, totalQuestions: number) {
+  static trackQuizAbandon(mode: 'practice' | 'test' | 'individual', questionsAnswered: number, totalQuestions: number) {
     if (!this.isGAReady() || !this.hasConsent()) return
 
     window.gtag('event', 'quiz_abandon', {
