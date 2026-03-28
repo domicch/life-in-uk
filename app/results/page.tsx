@@ -67,7 +67,7 @@ export default function ResultsPage() {
 
   // Get additional parameters for individual tests
   const mode = searchParams.get('mode')
-  const examNumber = searchParams.get('examNumber')
+  const examNumber = searchParams.get('exam')
   const originalMode = searchParams.get('originalMode')
 
   // Determine the test type for display
